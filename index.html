@@ -1,0 +1,941 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>日官一番賞代排代抽輔助工具</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: 單欄手機優先。靛藍固定頂欄放狀態數字，下方依流程排卡片：設定 → 1檢核 → 2拿獎順序 → 3分配 → 4彙整 */
+:root{
+  --bg:#f4f5fb; --card:#ffffff; --ink:#1d2140; --muted:#677094; --line:#dde0ee; --field:#f6f7fc;
+  --brand:#5a4ee0; --brand-deep:#4639c2; --brand-soft:#ecebff; --on-brand:#ffffff; --on-brand-dim:#cfcbff;
+  --gold:#fbbf24; --gold-ink:#6b3f00; --gold-soft:#fff3d1; --gold-line:#f3cf6a;
+  --mint:#34d399; --ok:#0b8a62; --ok-bg:#e1f6ec; --warn:#8f5300; --warn-bg:#fff3d9; --bad:#c0283a; --bad-bg:#fdeaed;
+  --ring:#7b70ff; --shadow:0 1px 2px rgba(30,33,64,.05),0 8px 22px rgba(30,33,64,.07);
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10121e; --card:#191c2e; --ink:#e9ebf8; --muted:#9aa1c4; --line:#2b2f4d; --field:#12142a;
+    --brand:#5a4ee0; --brand-deep:#4034b5; --brand-soft:#26285a;
+    --gold-soft:#3a2f12; --gold-line:#7a5f1c; --gold-ink:#fbd26a;
+    --ok:#4fd6a4; --ok-bg:#12372c; --warn:#f6c15a; --warn-bg:#3a2d10; --bad:#ff8c99; --bad-bg:#431a24;
+    --ring:#9a91ff; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.28); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10121e; --card:#191c2e; --ink:#e9ebf8; --muted:#9aa1c4; --line:#2b2f4d; --field:#12142a;
+  --brand:#5a4ee0; --brand-deep:#4034b5; --brand-soft:#26285a;
+  --gold-soft:#3a2f12; --gold-line:#7a5f1c; --gold-ink:#fbd26a;
+  --ok:#4fd6a4; --ok-bg:#12372c; --warn:#f6c15a; --warn-bg:#3a2d10; --bad:#ff8c99; --bad-bg:#431a24;
+  --ring:#9a91ff; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px rgba(0,0,0,.28); color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--font);-webkit-text-size-adjust:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--brand);z-index:40}
+.wrap{max-width:660px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--brand);color:var(--on-brand);box-shadow:0 4px 16px rgba(40,30,120,.28)}
+.top .wrap{padding-top:14px;padding-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{margin:0;font-size:19px;line-height:1.3;font-weight:700;letter-spacing:.01em;min-width:0}
+.ver{margin-left:auto;flex:none;background:var(--gold);color:var(--gold-ink);font:700 12px/1 var(--mono);padding:6px 8px;border-radius:8px}
+.stats{margin-top:12px;display:grid;grid-template-columns:repeat(3,1fr);background:var(--brand-deep);border-radius:16px;padding:10px 0;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.stat{padding:2px 8px;text-align:center;min-width:0}
+.stat+.stat{border-left:1px solid rgba(255,255,255,.16)}
+.stat .k{font-size:12.5px;color:var(--on-brand-dim)}
+.stat .v{font:700 24px/1.25 var(--mono);color:var(--mint);font-variant-numeric:tabular-nums}
+.stat .v small{font:500 14px var(--mono);color:var(--on-brand-dim)}
+.stat .v.first{color:#fff}
+.stat .v.attn{color:var(--gold)}
+.main{padding-block:18px calc(40px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);min-width:0}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sec-head h2{margin:0;font-size:18px;line-height:1.4;display:flex;align-items:center;gap:9px;min-width:0}
+.i{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.i.lg{width:28px;height:28px}
+.c-brand{color:var(--brand)} .c-ok{color:#14b57e} .c-blue{color:#3b82f6} .c-purple{color:#9b5cf0} .c-amber{color:#f59e0b}
+.grp{margin-top:18px}
+label,.lbl{display:flex;align-items:center;gap:6px;font-weight:700;font-size:16px}
+.hint{font-size:13px;color:var(--muted);margin-top:2px}
+.chip{display:inline-block;font-size:12.5px;color:var(--muted);background:var(--field);border-radius:6px;padding:1px 8px;margin-top:3px}
+.lab-row{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.nowrap{flex-wrap:nowrap}
+.field{width:100%;font:inherit;font-size:16px;line-height:1.6;color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-top:8px;min-width:0}
+.lab-row+.field{margin-top:0}
+.field::placeholder{color:var(--muted);opacity:.75}
+.field:focus{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px color-mix(in srgb,var(--ring) 28%,transparent)}
+textarea.field{resize:vertical;display:block}
+textarea.tall{min-height:240px}
+textarea.mid{min-height:110px;margin-top:0}
+.btn{font:inherit;font-weight:700;font-size:15px;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:12px;min-height:44px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:translateY(1px)}
+.btn.sm{min-height:40px;padding:0 12px;font-size:14.5px}
+.btn.icon{width:44px;padding:0;color:var(--muted)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.gold{background:var(--gold-soft);border-color:var(--gold-line);color:var(--gold-ink)}
+.btn.soft{background:var(--brand-soft);border-color:transparent;color:var(--brand)}
+.btn.danger{color:var(--bad);background:var(--bad-bg);border-color:color-mix(in srgb,var(--bad) 30%,transparent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+.elec{margin-top:12px;padding:14px;border-radius:16px;background:var(--brand-soft);border:1px solid color-mix(in srgb,var(--brand) 22%,transparent)}
+.elec label{color:var(--brand)}
+.elec .field{margin-top:10px;background:var(--card)}
+.elec .row{margin-top:10px}
+.elec .row .field{margin-top:0;flex:1}
+.hint2{margin-top:8px;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hint2.ok{color:var(--ok)} .hint2.warn{color:var(--warn)}
+.note{display:flex;gap:10px;align-items:flex-start;border-radius:12px;padding:10px 12px;font-size:14.5px;margin-top:10px;line-height:1.55}
+.note .i{width:18px;height:18px;margin-top:3px}
+.note>div{min-width:0;flex:1;overflow-wrap:anywhere}
+.note.bad{background:var(--bad-bg);color:var(--bad)}
+.note.warn{background:var(--warn-bg);color:var(--warn)}
+.note.ok{background:var(--ok-bg);color:var(--ok)}
+.note.info{background:var(--field);color:var(--muted)}
+.note button{font:inherit;font-weight:700;color:inherit;background:none;border:0;text-decoration:underline;padding:0 0 0 6px;cursor:pointer;min-height:24px}
+.out{margin-top:12px;background:var(--field);border:1.5px solid var(--line);border-radius:14px;padding:14px;font-size:16px;line-height:1.85;white-space:pre-wrap;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;min-height:70px}
+.out.empty{display:grid;place-items:center;text-align:center;color:var(--muted);border-style:dashed;white-space:normal}
+.out.empty small{display:block;font-size:13px;margin-top:2px}
+.out.mono{font-family:var(--mono);font-size:15px}
+.sub{margin-top:14px;font-weight:700;font-size:15.5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sub span{font-weight:500;font-size:13.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;margin-top:12px}
+.prize-prev{margin-top:8px;font:500 14px/1.7 var(--mono);color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:#272b4d;color:#fff;font-weight:700;font-size:14.5px;padding:11px 18px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:60;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.toast,.btn:active{transition:none;transform:translate(-50%,0)}.btn:active{transform:none}}
+@media (max-width:380px){.brand h1{font-size:17px}.stat .v{font-size:21px}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sc{margin-top:14px;border-top:1px dashed color-mix(in srgb,var(--brand) 30%,transparent);padding-top:6px}
+.sc summary{cursor:pointer;font-weight:700;color:var(--brand);min-height:40px;display:flex;align-items:center;gap:6px}
+.sc-slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.sc-slot{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;display:grid;gap:8px;align-content:start;min-width:0}
+.sc-slot.is-over{border-color:var(--ring);box-shadow:0 0 0 2px var(--ring) inset}
+.sc-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.sc-role{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--field);color:var(--ink)}
+.sc-role[data-r="after"]{background:var(--brand);color:#fff}
+.sc-drop{display:grid;place-items:center;align-content:center;gap:2px;min-height:96px;border:1.5px dashed var(--line);border-radius:10px;text-align:center;cursor:pointer;color:var(--muted);padding:10px;font-size:13px}
+.sc-drop b{color:var(--ink);font-size:14.5px}
+.sc-slot:focus-within .sc-drop{outline:3px solid var(--ring);outline-offset:2px}
+.sc-pv-scroll{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:var(--field)}
+.sc-pv-scroll canvas{display:block;width:100%;height:auto}
+.sc-foot{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted);margin-top:6px}
+.sc-link{color:var(--brand);font-weight:700;cursor:pointer;text-decoration:underline}
+.sc-err{color:var(--warn)}
+.sc-seg{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center;font-size:13px;color:var(--muted)}
+.sc-seg label{cursor:pointer}
+.sc-seg span.p{display:inline-block;padding:5px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink)}
+.sc-seg input:checked+span.p{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700}
+.sc-seg input:focus-visible+span.p{outline:3px solid var(--ring)}
+.sc-result{margin-top:10px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.sc-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted);margin-top:10px}
+.sc-legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:1.5px solid var(--line)}
+.sc-legend i.both{background:var(--brand-deep);border-color:var(--brand-deep)}
+.sc-legend i.new{background:var(--gold);border-color:var(--gold)}
+.sc-map{display:grid;grid-template-columns:repeat(var(--cols,6),minmax(0,1fr));gap:6px;margin-top:8px}
+.sc-cell{appearance:none;font:700 13px/1 var(--mono);padding:0;aspect-ratio:3/2;min-width:0;min-height:30px;border-radius:7px;cursor:pointer;border:1.5px solid var(--line);background:var(--card);color:var(--muted);display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.sc-cell.both{background:var(--brand-deep);border-color:var(--brand-deep);color:#fff}
+.sc-cell.new{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.sc-cell.lost{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
+.sc-cell:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+@media (max-width:420px){.sc-slots{grid-template-columns:1fr}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+<symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M16 3h5v5"/><path d="M4 20 21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M10 6h11M10 12h11M10 18h11"/><path d="M4 6h1v4M4 10h2M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/></symbol>
+<symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3z"/><path d="M12 9v4M12 17h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+</defs></svg>
+
+<header class="top"><div class="wrap">
+  <div class="brand">
+    <svg class="i lg" aria-hidden="true"><use href="#i-gift"/></svg>
+    <h1>日官一番賞代排代抽輔助工具</h1>
+    <span class="ver">4.0</span>
+  </div>
+  <div class="stats" role="status" aria-label="目前狀態">
+    <div class="stat"><div class="k">目前選號</div><div class="v first"><span id="sPick">0</span><small> / <span id="sTotal">∞</span></small></div></div>
+    <div class="stat"><div class="k">玩家缺號</div><div class="v" id="sMiss">0</div></div>
+    <div class="stat"><div class="k">已設獎項</div><div class="v" id="sPrize">0</div></div>
+  </div>
+</div></header>
+
+<main class="wrap main">
+
+  <section class="card" id="setup">
+    <div class="sec-head">
+      <h2><svg class="i c-brand" aria-hidden="true"><use href="#i-sliders"/></svg>開抽資料</h2>
+      <div class="row">
+        <button type="button" class="btn sm danger" id="btnClear"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg><span id="clearTxt">全清空</span></button>
+      </div>
+    </div>
+
+    <div class="grp">
+      <label for="total">總籤數</label>
+      <input id="total" class="field" inputmode="numeric" autocomplete="off" placeholder="未填則不限制選號上限">
+    </div>
+
+    <div class="grp">
+      <div class="lab-row">
+        <div><label for="players">玩家抽數及選號</label><div class="hint">格式：名稱 +抽數/選號</div></div>
+        <div class="row">
+          <button type="button" class="btn sm" id="btnBlank" title="總籤數剛好等於缺號時，依序補空">補空</button>
+          <button type="button" class="btn sm gold" id="btnRand" title="隨機補空"><svg class="i" aria-hidden="true"><use href="#i-shuffle"/></svg>隨機</button>
+          <button type="button" class="btn sm icon" id="btnClrPlayers" aria-label="清除名單"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
+        </div>
+      </div>
+      <textarea id="players" class="field tall" spellcheck="false" autocomplete="off" placeholder="在此貼上包含文案與名單的內容..."></textarea>
+      <div id="fillMsg" aria-live="polite"></div>
+
+      <div class="elec">
+        <label for="elec"><svg class="i" aria-hidden="true"><use href="#i-zap"/></svg>電選號碼</label>
+        <div class="hint">依序填給還沒選號的人，已經選好號的人會跳過。</div>
+        <div class="row nowrap">
+          <input id="elec" class="field" autocomplete="off" placeholder="例：2、17、18、19、25、29、31">
+          <button type="button" class="btn primary" id="btnElec">依序填入</button>
+        </div>
+        <div class="hint2" id="elecHint"></div>
+        <details class="sc" id="scBox">
+          <summary>用截圖判斷電選號碼</summary>
+          <div class="hint">上傳電選前、電選後兩張截圖，自動算出多出來的號碼，並填進上方欄位。</div>
+          <div class="sc-slots" id="scSlots"></div>
+          <fieldset class="sc-seg" style="border:0;padding:0;margin:10px 0 0">
+            <legend class="sr">前後順序</legend>
+            <span>前後順序</span>
+            <label><input class="sr" type="radio" name="scorder" value="auto" checked><span class="p">自動判斷</span></label>
+            <label><input class="sr" type="radio" name="scorder" value="normal"><span class="p">照上傳順序</span></label>
+            <label><input class="sr" type="radio" name="scorder" value="swapped"><span class="p">前後對調</span></label>
+          </fieldset>
+          <div class="sc-result" id="scResult" aria-live="polite">上傳電選前、電選後兩張截圖，就會算出電選號碼並填進上方欄位。</div>
+          <div class="row" id="scCopy" hidden style="margin-top:10px">
+            <button type="button" class="btn sm" id="scCopyBA"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>複製前後已選</button>
+            <button type="button" class="btn sm primary" id="scCopyNew"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>複製電選號碼</button>
+          </div>
+          <div id="scNotes"></div>
+          <div id="scMapSec" hidden>
+            <div class="sc-legend"><span><i class="both"></i>電選前已選</span><span><i class="new"></i>電選新增</span><span><i></i>未選</span></div>
+            <div class="sc-map" id="scMap"></div>
+            <div class="hint" style="margin-top:8px">辨識有誤時，點一下號碼可手動修正。圖片只在你的瀏覽器內處理，不會上傳。</div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="grp">
+      <div class="lab-row">
+        <div><label for="prizes">出獎順序</label><span class="chip">依開獎順序填入，連續英文會切開</span></div>
+        <button type="button" class="btn sm icon" id="btnClrPrizes" aria-label="清除出獎順序"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      </div>
+      <textarea id="prizes" class="field mid" spellcheck="false" autocomplete="off" placeholder="請在此貼上依序開出的獎項...&#10;例： D C D C E"></textarea>
+      <div id="prizeHint"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="sec-head">
+      <h2><svg class="i c-ok" aria-hidden="true"><use href="#i-check"/></svg>1. 未選籤號與檢核</h2>
+      <button type="button" class="btn sm" id="cp1"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>複製</button>
+    </div>
+    <div id="sec1"></div>
+  </section>
+
+  <section class="card">
+    <div class="sec-head">
+      <h2><svg class="i c-blue" aria-hidden="true"><use href="#i-list"/></svg>2. 拿獎順序</h2>
+      <button type="button" class="btn sm" id="cp2"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>一鍵複製</button>
+    </div>
+    <div id="sec2"></div>
+  </section>
+
+  <section class="card">
+    <div class="sec-head">
+      <h2><svg class="i c-purple" aria-hidden="true"><use href="#i-gift"/></svg>3. 獎項分配</h2>
+      <button type="button" class="btn sm" id="cp3"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>複製</button>
+    </div>
+    <div id="sec3"></div>
+  </section>
+
+  <section class="card">
+    <div class="sec-head">
+      <h2><svg class="i c-amber" aria-hidden="true"><use href="#i-file"/></svg>4. 總彙整資料</h2>
+    </div>
+    <div class="two">
+      <button type="button" class="btn" id="cp4"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>單獨複製</button>
+      <button type="button" class="btn primary" id="cpAll"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>一鍵複製完整報告</button>
+    </div>
+    <div id="sec4"></div>
+  </section>
+
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/*CORE*/
+const PLAYER_RE=/^\s*([@＠].*)[+＋]\s*(\d+)\s*[\/／](.*)$/;
+const CIRC='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+const toNums=s=>(String(s).match(/\d+/g)||[]).map(Number);
+const missing=p=>Math.max(0,p.draws-p.nums.length);
+const sumBy=(arr,f)=>arr.reduce((a,x)=>a+f(x),0);
+const chunk=(arr,n)=>{const r=[];for(let i=0;i<arr.length;i+=n)r.push(arr.slice(i,i+n));return r};
+
+function parsePlayers(text){
+  const lines=[],players=[];
+  String(text).replace(/\r/g,'').split('\n').forEach(raw=>{
+    const m=PLAYER_RE.exec(raw);
+    if(m){
+      const p={name:m[1].trim(),draws:parseInt(m[2],10),nums:toNums(m[3]),idx:players.length,changed:false};
+      players.push(p);lines.push({kind:'player',p,raw});
+    }else lines.push({kind:'text',raw});
+  });
+  return {lines,players};
+}
+const DIGIT_WORDS={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9};
+function fixLine(t){
+  return String(t).replace(/[(（]\s*(zero|one|two|three|four|five|six|seven|eight|nine|\d)\s*[)）]/gi,(m,w)=>/^\d$/.test(w)?w:String(DIGIT_WORDS[w.toLowerCase()]));
+}
+function fmtPlayer(l){
+  const p=l.p;
+  return (p.changed||p.nums.length>1)?`${p.name} +${p.draws}/${p.nums.join('、')}`:l.raw;
+}
+function serialize(P){
+  return P.lines.map(l=>l.kind==='player'?fmtPlayer(l):fixLine(l.raw)).join('\n');
+}
+function usedMap(players){
+  const m=new Map();
+  players.forEach(p=>p.nums.forEach(n=>{if(!m.has(n))m.set(n,[]);m.get(n).push(p.name)}));
+  return m;
+}
+function remainingNums(total,used){
+  const r=[];for(let n=1;n<=total;n++)if(!used.has(n))r.push(n);return r;
+}
+function fillQueue(players,queue,sort){
+  let qi=0,filled=0;
+  players.forEach(p=>{
+    const need=missing(p);
+    if(need>0&&qi<queue.length){
+      const take=queue.slice(qi,qi+need);qi+=take.length;
+      p.nums=p.nums.concat(take);if(sort)p.nums.sort((a,b)=>a-b);
+      p.changed=true;filled+=take.length;
+    }
+  });
+  return {filled,used:qi};
+}
+function doFillBlank(text,total){
+  if(!(total>0))return {error:'請先輸入總籤數，才能補空。'};
+  const P=parsePlayers(text);
+  if(!P.players.length)return {error:'找不到玩家名單（每行需要「@名稱 +抽數/」的格式）。'};
+  const used=usedMap(P.players),free=remainingNums(total,used),slots=sumBy(P.players,missing);
+  if(slots===0)return {error:'每個人都已經選好號了。'};
+  if(free.length!==slots)return {error:`還有 ${free.length} 個籤號沒被選，但玩家缺 ${slots} 個號，數量對不上，無法補空。如果是電選的號碼，請用「電選號碼」填入。`};
+  fillQueue(P.players,free,false);
+  return {text:serialize(P),filled:slots};
+}
+function doRandom(text,total){
+  if(!(total>0))return {error:'請先輸入總籤數，才能隨機補空。'};
+  const P=parsePlayers(text);
+  if(!P.players.length)return {error:'找不到玩家名單（每行需要「@名稱 +抽數/」的格式）。'};
+  const used=usedMap(P.players),free=remainingNums(total,used),slots=sumBy(P.players,missing);
+  if(slots===0)return {error:'每個人都已經選好號了。'};
+  if(free.length<slots)return {error:`只剩 ${free.length} 個籤號，但玩家缺 ${slots} 個號，不夠分。`};
+  for(let i=free.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[free[i],free[j]]=[free[j],free[i]]}
+  fillQueue(P.players,free.slice(0,slots),true);
+  return {text:serialize(P),filled:slots};
+}
+function elecInfo(text,elecStr){
+  const P=parsePlayers(text),used=usedMap(P.players),seen=new Set(),queue=[],skipped=[];
+  toNums(elecStr).forEach(n=>{if(used.has(n)||seen.has(n))skipped.push(n);else{seen.add(n);queue.push(n)}});
+  return {P,queue,skipped,slots:sumBy(P.players,missing)};
+}
+function doElec(text,elecStr){
+  const info=elecInfo(text,elecStr);
+  if(!toNums(elecStr).length)return {error:'請先輸入電選號碼。'};
+  if(!info.P.players.length)return {error:'找不到玩家名單（每行需要「@名稱 +抽數/」的格式）。'};
+  if(info.slots===0)return {error:'每個人都已經選好號了，沒有空位可填。'};
+  const r=fillQueue(info.P.players,info.queue,false);
+  return {text:serialize(info.P),filled:r.filled,skipped:info.skipped,leftover:info.queue.length-r.used,shortBy:info.slots-r.filled};
+}
+
+function cleanChars(name){
+  return Array.from(name.replace(/^[@＠]/,'')).filter(c=>/[\p{L}\p{N}]/u.test(c));
+}
+function makeAbbr(players){
+  const chars=players.map(p=>cleanChars(p.name));
+  const len=chars.map(c=>Math.min(1,c.length));
+  const key=i=>chars[i].slice(0,len[i]).join('').toLowerCase();
+  for(let g=0;g<60;g++){
+    const groups=new Map();
+    players.forEach((_,i)=>{const k=key(i);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(i)});
+    let changed=false;
+    groups.forEach(ix=>{if(ix.length>1)ix.forEach(i=>{if(len[i]<chars[i].length){len[i]++;changed=true}})});
+    if(!changed)break;
+  }
+  const labels=players.map((_,i)=>chars[i].length?chars[i].slice(0,len[i]).join('').toUpperCase():`#${i+1}`);
+  const byLabel=new Map();
+  labels.forEach((l,i)=>{const k=l.toLowerCase();if(!byLabel.has(k))byLabel.set(k,[]);byLabel.get(k).push(i)});
+  byLabel.forEach(ix=>{if(ix.length>1)ix.forEach((i,n)=>{labels[i]+=n<CIRC.length?CIRC[n]:`(${n+1})`})});
+  return labels;
+}
+function parsePrizes(str){
+  const out=[];
+  String(str).replace(/\r/g,'').split('\n').forEach(line=>{
+    line.split(/[\s,，、;；|]+/).filter(Boolean).forEach(ch=>{
+      if(/^[A-Za-z0-9]+$/.test(ch))out.push(...ch.split(''));
+      else if(/[\p{L}\p{N}]/u.test(ch))out.push(ch);
+    });
+  });
+  return out;
+}
+const COLL=(()=>{try{return new Intl.Collator('zh-u-co-stroke',{numeric:true})}catch(e){return new Intl.Collator('zh-Hant',{numeric:true})}})();
+const sortKey=s=>s.replace(/^[A-Za-z0-9]+(?=\p{Script=Han})/u,'');
+const prizeCmp=(a,b)=>COLL.compare(sortKey(a),sortKey(b));
+
+function analyze(st){
+  const P=parsePlayers(st.players),players=P.players;
+  const total=parseInt(st.total,10)>0?parseInt(st.total,10):0;
+  const members=[],byName=new Map();
+  players.forEach(p=>{
+    let m=byName.get(p.name);
+    if(!m){m={name:p.name,draws:0,nums:[],idx:members.length,first:p};byName.set(p.name,m);members.push(m)}
+    m.draws+=p.draws;m.nums=m.nums.concat(p.nums);p.m=m;
+  });
+  const used=usedMap(players);
+  const picked=sumBy(players,p=>p.nums.length);
+  const missingTotal=sumBy(players,missing);
+  const drawsTotal=sumBy(players,p=>p.draws);
+  const dups=[...used].filter(([n,w])=>w.length>1).map(([n,who])=>({n,who})).sort((a,b)=>a.n-b.n);
+  const outRange=[...used.keys()].filter(n=>n<1||(total>0&&n>total)).sort((a,b)=>a-b);
+  const over=members.filter(m=>m.nums.length>m.draws);
+  const lacking=players.filter(p=>missing(p)>0);
+  const remaining=total>0?remainingNums(total,used):null;
+  const prizes=parsePrizes(st.prizes);
+  const selReady=players.length>0&&missingTotal===0&&dups.length===0&&outRange.length===0&&over.length===0;
+  const r={players,members,lines:P.lines,total,picked,missingTotal,drawsTotal,dups,outRange,over,lacking,remaining,prizes,selReady,
+    tickets:[],abbrs:[],order:'',orderCopy:'',assign:'',summaryLines:[],summary:'',full:'',prizeReady:false};
+  if(!selReady)return r;
+  r.abbrs=makeAbbr(members);
+  r.tickets=members.flatMap(m=>m.nums.map(n=>({n,m}))).sort((a,b)=>a.n-b.n);
+  r.order=chunk(r.tickets.map(t=>r.abbrs[t.m.idx]),5).map(x=>x.join(' ')).join('\n');
+  const head0=r.lines.map(l=>l.kind==='player'?fmtPlayer(l):fixLine(l.raw)).join('\n').trim();
+  r.orderCopy=`${head0}\n\n開獎順序\n${r.order}`;
+  r.prizeReady=prizes.length===r.tickets.length&&prizes.length>0;
+  if(!r.prizeReady)return r;
+  r.assign=chunk(r.tickets.map((t,i)=>r.abbrs[t.m.idx]+prizes[i]),5).map(x=>x.join(' ')).join('\n');
+  const by=members.map(()=>[]);
+  r.tickets.forEach((t,i)=>by[t.m.idx].push(prizes[i]));
+  r.summaryLines=members.map(m=>{
+    const cnt=new Map();by[m.idx].forEach(x=>cnt.set(x,(cnt.get(x)||0)+1));
+    const parts=[...cnt].sort((a,b)=>prizeCmp(a[0],b[0])).map(([k,v])=>v>1?`${k}*${v}`:k);
+    return `${m.name} +${m.draws}/${parts.join('、')}`;
+  });
+  r.summary=r.summaryLines.join('\n');
+  const head=r.lines.filter(l=>l.kind!=='player'||l.p.m.first===l.p)
+    .map(l=>l.kind==='player'?r.summaryLines[l.p.m.idx]:fixLine(l.raw)).join('\n').trim();
+  r.full=`${head}\n\n開獎順序\n${r.assign}`;
+  return r;
+}
+/*ENDCORE*/
+
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY='ichiban-count-v31';
+const state={total:'',players:'',elec:'',prizes:''};
+let undoText=null,out={rem:'',order:'',orderCopy:'',assign:'',sum:'',full:''};
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&typeof s==='object')Object.assign(state,s)}catch(e){}}
+
+let toastTimer=0;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1800)}
+async function copyText(text,okMsg){
+  if(!text){toast('目前沒有可複製的內容');return}
+  try{await navigator.clipboard.writeText(text);toast(okMsg||'已複製');return}catch(e){}
+  const ta=document.createElement('textarea');
+  ta.value=text;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+  document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,text.length);
+  let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+  ta.remove();toast(ok?(okMsg||'已複製'):'複製失敗，請長按內容手動複製');
+}
+
+const ic=n=>`<svg class="i" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const note=(kind,lines,extra)=>`<div class="note ${kind}">${ic(kind==='ok'?'check':kind==='info'?'info':'alert')}<div>${[].concat(lines).map(esc).join('<br>')}${extra||''}</div></div>`;
+const empty=(msg,sub)=>`<div class="out empty"><div>${esc(msg)}${sub?`<small>${esc(sub)}</small>`:''}</div></div>`;
+
+function setMsg(kind,text,withUndo){
+  $('fillMsg').innerHTML=kind?note(kind,text,withUndo?'<button type="button" data-undo>復原</button>':''):'';
+}
+
+function render(){
+  const a=analyze(state);
+  $('sPick').textContent=a.picked;
+  $('sTotal').textContent=a.total||'∞';
+  const sm=$('sMiss');sm.textContent=a.missingTotal;sm.className='v'+(a.missingTotal>0?' attn':'');
+  $('sPrize').textContent=a.prizes.length;
+
+  // 電選提示
+  const ei=elecInfo(state.players,state.elec);
+  const eh=$('elecHint');
+  if(!state.elec.trim()){eh.className='hint2';eh.textContent=ei.P.players.length?`目前有 ${ei.slots} 個空位等著填。`:''}
+  else{
+    const same=ei.queue.length===ei.slots;
+    eh.className='hint2 '+(same?'ok':'warn');
+    eh.textContent=`空位 ${ei.slots} 個，電選號碼 ${ei.queue.length} 個`+(ei.skipped.length?`（略過重複或已被選走：${ei.skipped.join('、')}）`:'')+(same?'，數量一致':'，數量不同');
+  }
+
+  // 出獎順序提示
+  const ph=$('prizeHint');
+  if(!a.prizes.length)ph.innerHTML='';
+  else{
+    const need=a.selReady?a.tickets.length:a.drawsTotal;
+    const kind=need>0?(a.prizes.length===need?'ok':'warn'):'info';
+    const msg=need>0?`已解析 ${a.prizes.length} 個獎項，需要 ${need} 個`+(a.prizes.length===need?'，數量一致':'，數量不一致'):`已解析 ${a.prizes.length} 個獎項`;
+    ph.innerHTML=note(kind,msg)+`<div class="prize-prev">${esc(chunk(a.prizes,5).map(x=>x.join(' ')).join('\n'))}</div>`;
+  }
+
+  // 1 檢核
+  let h='';
+  if(a.players.length){
+    const msgs=[];
+    a.dups.forEach(d=>{const names=[...new Set(d.who)];msgs.push(names.length>1?`籤號 ${d.n} 重複：${names.join('、')}`:`籤號 ${d.n} 重複：${names[0]} 填了兩次`)});
+    if(a.outRange.length)msgs.push(`超出範圍的籤號：${a.outRange.join('、')}`+(a.total?`（上限 ${a.total}）`:''));
+    a.over.forEach(p=>msgs.push(`${p.name} 選了 ${p.nums.length} 個號，但只抽 ${p.draws} 抽`));
+    if(msgs.length)h+=note('bad',msgs);
+    if(a.lacking.length)h+=note('warn',`還缺號：${a.lacking.map(p=>`${p.name}（缺 ${missing(p)}）`).join('、')}`);
+    if(!msgs.length&&!a.lacking.length)h+=note('ok',`${a.players.length} 位玩家、${a.picked} 個號碼，沒有重複，全部選完。`);
+  }else h+=note('info','貼上玩家名單後，這裡會顯示重複與缺號的檢核結果。');
+  h+=`<div class="sub">剩餘籤號 <span>${a.remaining?`共 ${a.remaining.length} 個`:''}</span></div>`;
+  if(a.remaining){
+    out.rem=`尚可選的籤號\n${a.remaining.length?a.remaining.join(', '):'（已全部選完）'}`;
+    h+=`<div class="out">${esc(a.remaining.length?a.remaining.join(', '):'已全部選完')}</div>`;
+  }else{out.rem='';h+=empty('請先輸入總籤數以計算未選籤號...')}
+  $('sec1').innerHTML=h;
+
+  // 2 拿獎順序
+  if(a.selReady){out.order=a.order;out.orderCopy=a.orderCopy;$('sec2').innerHTML=`<div class="out">${esc(a.order)}</div><div class="hint" style="margin-top:8px">複製內容包含上方文案、玩家名單與開獎順序。</div>`}
+  else{
+    out.order='';out.orderCopy='';
+    let why='';
+    if(a.dups.length||a.outRange.length||a.over.length)why='先處理上面的檢核問題';
+    else if(a.missingTotal>0)why=`還缺 ${a.missingTotal} 個號碼`;
+    $('sec2').innerHTML=empty('等待所有人完成選號...',why);
+  }
+
+  // 3 獎項分配
+  if(a.prizeReady){out.assign=a.assign;$('sec3').innerHTML=`<div class="out">${esc(a.assign)}</div>`}
+  else{
+    out.assign='';
+    let why='';
+    if(!a.selReady)why='';
+    else if(!a.prizes.length)why='請在上方貼上出獎順序';
+    else why=`出獎順序有 ${a.prizes.length} 個，需要 ${a.tickets.length} 個`;
+    $('sec3').innerHTML=empty('等待拿獎順序...',why);
+  }
+
+  // 4 總彙整
+  const ready=a.prizeReady;
+  out.sum=ready?a.summary:'';out.full=ready?a.full:'';
+  $('cp4').disabled=!ready;$('cpAll').disabled=!ready;
+  $('cp1').disabled=!out.rem;$('cp2').disabled=!out.orderCopy;$('cp3').disabled=!out.assign;
+  $('sec4').innerHTML=ready?`<div class="out">${esc(a.summary)}</div>`:empty('等待排序與分配完成後顯示...');
+}
+
+function persistAndRender(){save();render()}
+function applyResult(res,okText){
+  if(res.error){setMsg('bad',res.error);return}
+  undoText=state.players;
+  state.players=res.text;$('players').value=res.text;
+  const extra=[];
+  if(res.skipped&&res.skipped.length)extra.push(`略過重複或已被選走的號碼：${res.skipped.join('、')}`);
+  if(res.leftover>0)extra.push(`還有 ${res.leftover} 個號碼沒有空位可填`);
+  if(res.shortBy>0)extra.push(`還有 ${res.shortBy} 個空位沒有號碼`);
+  setMsg(extra.length?'warn':'ok',[okText].concat(extra),true);
+  persistAndRender();
+}
+
+$('total').addEventListener('input',e=>{state.total=e.target.value.replace(/\D/g,'');persistAndRender()});
+$('players').addEventListener('input',e=>{state.players=e.target.value;undoText=null;setMsg('');persistAndRender()});
+$('elec').addEventListener('input',e=>{state.elec=e.target.value;persistAndRender()});
+$('prizes').addEventListener('input',e=>{state.prizes=e.target.value;persistAndRender()});
+
+$('btnBlank').addEventListener('click',()=>{const r=doFillBlank(state.players,parseInt(state.total,10)||0);applyResult(r,r.filled?`已依序補空 ${r.filled} 個號碼。`:'')});
+$('btnRand').addEventListener('click',()=>{const r=doRandom(state.players,parseInt(state.total,10)||0);applyResult(r,r.filled?`已隨機補上 ${r.filled} 個號碼。`:'')});
+$('btnElec').addEventListener('click',()=>{const r=doElec(state.players,state.elec);applyResult(r,r.filled?`已依序填入 ${r.filled} 個電選號碼。`:'')});
+$('fillMsg').addEventListener('click',e=>{
+  if(!e.target.closest('[data-undo]')||undoText===null)return;
+  state.players=undoText;$('players').value=undoText;undoText=null;setMsg('info','已復原。');persistAndRender();
+});
+
+$('btnClrPlayers').addEventListener('click',()=>{if(!state.players)return;undoText=state.players;state.players='';$('players').value='';setMsg('info','名單已清除。',true);persistAndRender()});
+$('btnClrPrizes').addEventListener('click',()=>{state.prizes='';$('prizes').value='';persistAndRender()});
+
+let clearArmed=0;
+$('btnClear').addEventListener('click',()=>{
+  if(!clearArmed){
+    $('clearTxt').textContent='再按一次確認';
+    clearArmed=setTimeout(()=>{clearArmed=0;$('clearTxt').textContent='全清空'},3000);return;
+  }
+  clearTimeout(clearArmed);clearArmed=0;$('clearTxt').textContent='全清空';
+  Object.assign(state,{total:'',players:'',elec:'',prizes:''});undoText=null;setMsg('');syncFields();persistAndRender();toast('已全部清空');
+});
+
+$('cp1').addEventListener('click',()=>copyText(out.rem,'已複製剩餘籤號'));
+$('cp2').addEventListener('click',()=>copyText(out.orderCopy,'已複製拿獎順序'));
+$('cp3').addEventListener('click',()=>copyText(out.assign,'已複製獎項分配'));
+$('cp4').addEventListener('click',()=>copyText(out.sum,'已複製總彙整'));
+$('cpAll').addEventListener('click',()=>copyText(out.full,'已複製完整報告'));
+
+window.ichibanSetElec=v=>{state.elec=v;$('elec').value=v;persistAndRender()};
+function syncFields(){$('total').value=state.total;$('players').value=state.players;$('elec').value=state.elec;$('prizes').value=state.prizes}
+load();syncFields();render();
+})();
+</script>
+<script>
+// CORE-START
+/* Art-independent detector.
+   1. Tickets sit on a regular grid, so edge energy along x and y repeats with the ticket pitch.
+   2. Folding that energy by the pitch gives the ticket edges (left/right, top/bottom).
+   3. A lattice cell holds a ticket if its outline contrasts with the gap around it on all four sides.
+   4. A ticket is selected if its outline carries the red-pink frame; the artwork and the brightness are never used. */
+function lineProfiles(data,W,H){
+  const Pv=new Float64Array(W), Ph=new Float64Array(H);
+  const CL=150;
+  for(let y=1;y<H-1;y++){
+    for(let x=1;x<W-1;x++){
+      const p=(y*W+x)*4;
+      const dx=Math.abs(data[p+4]-data[p-4])+Math.abs(data[p+5]-data[p-3])+Math.abs(data[p+6]-data[p-2]);
+      const dy=Math.abs(data[p+W*4]-data[p-W*4])+Math.abs(data[p+W*4+1]-data[p-W*4+1])+Math.abs(data[p+W*4+2]-data[p-W*4+2]);
+      Pv[x]+=dx>CL?CL:dx; Ph[y]+=dy>CL?CL:dy;
+    }
+  }
+  return {Pv,Ph};
+}
+function periodCandidates(P,minS,maxS){
+  const n=P.length; let mean=0; for(let i=0;i<n;i++) mean+=P[i]; mean/=n;
+  const z=new Float64Array(n); for(let i=0;i<n;i++) z[i]=P[i]-mean;
+  const hi=Math.min(maxS,n-6), ac=new Float64Array(hi+2);
+  for(let s=Math.max(2,minS-2);s<=hi+1;s++){
+    let a=0; for(let i=0;i+s<n;i++) a+=z[i]*z[i+s];
+    ac[s]=a/(n-s);
+  }
+  const pk=[];
+  for(let s=minS;s<=hi;s++) if(ac[s]>=ac[s-1]&&ac[s]>=ac[s+1]&&ac[s]>0) pk.push([s,ac[s]]);
+  pk.sort((u,v)=>v[1]-u[1]);
+  if(!pk.length) return [];
+  const out=[], add=s=>{ s=Math.round(s); if(s>=minS&&s<=maxS&&!out.some(t=>Math.abs(t-s)<=2)) out.push(s); };
+  for(const [s,v] of pk.slice(0,5)) if(v>=0.35*pk[0][1]){ add(s); add(s/2); }
+  return out.slice(0,8);
+}
+function fold(P,p,B,off){
+  const F=new Float64Array(B);
+  for(let x=0;x<P.length;x++){
+    let t=((x-off)%p)/p; if(t<0)t+=1;
+    F[Math.min(B-1,Math.floor(t*B))]+=P[x];
+  }
+  return F;
+}
+function axisLattice(P,p0){
+  if(!p0) return null;
+  let bp=p0,bsc=-1;
+  for(let p=p0*0.96;p<=p0*1.04;p+=0.02){
+    const B=Math.max(8,Math.round(p*2)), F=fold(P,p,B,0);
+    let s=0; for(let i=0;i<B;i++) s+=F[i]*F[i];
+    if(s>bsc){bsc=s;bp=p;}
+  }
+  const p=bp, B=Math.round(p*4);
+  let F=fold(P,p,B,0);
+  const G=new Float64Array(B);
+  for(let i=0;i<B;i++) G[i]=F[(i+B-2)%B]+2*F[(i+B-1)%B]+3*F[i]+2*F[(i+1)%B]+F[(i+2)%B];
+  let a=0; for(let i=1;i<B;i++) if(G[i]>G[a]) a=i;
+  let b=-1;
+  for(let i=0;i<B;i++){
+    const d=Math.min((i-a+B)%B,(a-i+B)%B);
+    if(d<0.12*B) continue;
+    if(b<0||G[i]>G[b]) b=i;
+  }
+  if(b<0||G[b]<0.3*G[a]) return null;
+  const ea=(a+0.5)/B*p, eb=(b+0.5)/B*p;
+  const d1=((eb-ea)%p+p)%p;
+  const left=d1>=p/2?ea:eb, size=d1>=p/2?d1:p-d1;
+  return {p,left,size,gap:p-size};
+}
+function pxAt(data,W,H,x,y){
+  x=Math.round(x); y=Math.round(y);
+  if(x<0||y<0||x>=W||y>=H) return null;
+  const k=(y*W+x)*4; return [data[k],data[k+1],data[k+2]];
+}
+function cellStats(data,W,H,x0,y0,w,h,gx,gy){
+  const din=3, dox=Math.max(2,Math.round(gx*0.35)), doy=Math.max(2,Math.round(gy*0.35));
+  const N=14, sides={t:[0,0,0],b:[0,0,0],l:[0,0,0],r:[0,0,0]};
+  const red=(c)=>c&&c[0]-c[1]>=30&&c[0]-c[2]>=18;
+  const sideTest=(name,get)=>{
+    let valid=0,contrast=0,reds=0;
+    for(let k=0;k<N;k++){
+      const f=0.2+0.6*k/(N-1);
+      const s=get(f);
+      const a=pxAt(data,W,H,s.ix,s.iy), o=pxAt(data,W,H,s.ox,s.oy);
+      if(!a||!o) continue;
+      valid++;
+      const dist=(u,v)=>Math.abs(u[0]-v[0])+Math.abs(u[1]-v[1])+Math.abs(u[2]-v[2]);
+      let ok=dist(a,o)>=45;
+      let hit=false;
+      for(let t=-2;t<=4;t++){
+        const q=pxAt(data,W,H,s.ex+s.nx*t,s.ey+s.ny*t);
+        if(!q) continue;
+        if(red(q)) hit=true;
+        // a thin line on the edge counts too, so a pale ticket on a pale page still shows
+        if(!ok&&t<=2&&dist(q,a)>=45&&dist(q,o)>=45) ok=true;
+      }
+      if(ok) contrast++;
+      if(hit) reds++;
+    }
+    sides[name]=[valid,contrast,reds];
+  };
+  const x1=x0+w, y1=y0+h;
+  sideTest('t',f=>({ix:x0+f*w,iy:y0+din,ox:x0+f*w,oy:y0-doy,ex:x0+f*w,ey:y0,nx:0,ny:1}));
+  sideTest('b',f=>({ix:x0+f*w,iy:y1-din,ox:x0+f*w,oy:y1+doy,ex:x0+f*w,ey:y1,nx:0,ny:-1}));
+  sideTest('l',f=>({ix:x0+din,iy:y0+f*h,ox:x0-dox,oy:y0+f*h,ex:x0,ey:y0+f*h,nx:1,ny:0}));
+  sideTest('r',f=>({ix:x1-din,iy:y0+f*h,ox:x1+dox,oy:y0+f*h,ex:x1,ey:y0+f*h,nx:-1,ny:0}));
+  let sidesValid=0,redSides=0,redSum=0,validSum=0,minFrac=1,sumFrac=0;
+  for(const k of ['t','b','l','r']){
+    const [v,c,r]=sides[k];
+    if(v<N*0.4) continue;
+    sidesValid++; validSum+=v; redSum+=r;
+    sumFrac+=c/v; minFrac=Math.min(minFrac,c/v);
+    if(r>=v*0.5) redSides++;
+  }
+  // every side needs some contrast, and on the whole the outline must stand out clearly
+  return {strict:sidesValid>=2&&minFrac>=0.6, present:sidesValid>=2&&minFrac>=0.4&&sumFrac/sidesValid>=0.75, sel:redSides>=2&&redSum>=0.4*validSum, redSides, redFrac:validSum?redSum/validSum:0};
+}
+function gridCells(data,W,H,ax,ay,strict){
+  const w=ax.size,h=ay.size, cells=[];
+  const i0=Math.floor(-ax.left/ax.p)-1, i1=Math.ceil((W-ax.left)/ax.p)+1;
+  const j0=Math.floor(-ay.left/ay.p)-1, j1=Math.ceil((H-ay.left)/ay.p)+1;
+  for(let j=j0;j<=j1;j++){
+    for(let i=i0;i<=i1;i++){
+      const x0=ax.left+i*ax.p, y0=ay.left+j*ay.p;
+      if(x0+w<w*0.4||x0>W-w*0.4||y0+h<h*0.4||y0>H-h*0.4) continue;
+      const st=cellStats(data,W,H,x0,y0,w,h,ax.gap,ay.gap);
+      if(strict?st.strict:st.present) cells.push({i,j,x0:Math.round(x0),y0:Math.round(y0),x1:Math.round(x0+w),y1:Math.round(y0+h),dark:st.sel,frac:st.redFrac});
+    }
+  }
+  return cells;
+}
+function analyzeTickets(data,W,H){
+  const empty={tickets:[],cols:0,wm:0,hm:0,W,H};
+  const {Pv,Ph}=lineProfiles(data,W,H);
+  const xs=periodCandidates(Pv,Math.max(14,Math.round(W*0.05)),Math.round(W*0.5)).map(p=>axisLattice(Pv,p)).filter(Boolean);
+  const ys=periodCandidates(Ph,Math.max(14,Math.round(W*0.04)),Math.round(H*0.5)).map(p=>axisLattice(Ph,p)).filter(Boolean);
+  let best=null;
+  for(const ax of xs) for(const ay of ys){
+    const asp=ax.size/ay.size;
+    if(asp<1.1||asp>2.6||ax.gap<1.5||ay.gap<1.5||ax.gap>0.6*ax.size||ay.gap>0.6*ay.size) continue;
+    const n=gridCells(data,W,H,ax,ay,true).length;
+    if(!best||n>best.n) best={ax,ay,n};
+  }
+  if(!best||!best.n) return empty;
+  const {ax,ay}=best;
+  const cells=gridCells(data,W,H,ax,ay,false);
+  cells.sort((a,b)=>a.j-b.j||a.i-b.i);
+  const perRow={}; for(const c of cells) perRow[c.j]=(perRow[c.j]||0)+1;
+  const cols=Math.max(0,...Object.values(perRow));
+  return {tickets:cells,cols,wm:ax.size,hm:ay.size,W,H,pitchX:ax.p,pitchY:ay.p};
+}
+// CORE-END
+
+(function(){
+  const $=s=>document.querySelector(s);
+  const state=[{},{}];
+  let order='auto';
+  const fmt=a=>a.length?a.join('、'):'無';
+  const count=a=>a?a.filter(Boolean).length:0;
+  const MONO='ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+
+  /* ---------- two upload slots ---------- */
+  const slotsEl=$('#scSlots');
+  [0,1].forEach(i=>{
+    slotsEl.insertAdjacentHTML('beforeend',`
+<div class="sc-slot" id="scslot${i}">
+  <div class="sc-head"><span>圖片 ${i+1}</span><span class="sc-role" id="scrole${i}" data-r="${i?'after':'before'}">${i?'電選後':'電選前'}</span></div>
+  <label class="sc-drop" id="scdrop${i}" for="scfile${i}">
+    <b>選擇截圖</b>
+    <span>點擊、拖曳或貼上圖片</span>
+  </label>
+  <input class="sr" type="file" id="scfile${i}" accept="image/*"${i===0?' multiple':''}>
+  <div id="scpv${i}" hidden>
+    <div class="sc-pv-scroll"><canvas id="sccv${i}" aria-label="圖片 ${i+1} 的辨識結果，號碼標在每張籤券上"></canvas></div>
+    <div class="sc-foot"><span id="scinfo${i}"></span><label class="sc-link" for="scfile${i}">更換</label></div>
+  </div>
+</div>`);
+    const slot=$('#scslot'+i), input=$('#scfile'+i);
+    input.addEventListener('change',()=>{ assign([...input.files],i); input.value=''; });
+    ['dragenter','dragover'].forEach(ev=>slot.addEventListener(ev,e=>{e.preventDefault();slot.classList.add('is-over');}));
+    ['dragleave','drop'].forEach(ev=>slot.addEventListener(ev,e=>{e.preventDefault();slot.classList.remove('is-over');}));
+    slot.addEventListener('drop',e=>assign([...e.dataTransfer.files],i));
+  });
+  window.addEventListener('dragover',e=>e.preventDefault());
+  window.addEventListener('drop',e=>e.preventDefault());
+  document.addEventListener('paste',e=>{
+    const files=[...(e.clipboardData?e.clipboardData.items:[])].filter(it=>it.type.startsWith('image/')).map(it=>it.getAsFile()).filter(Boolean);
+    if(!files.length) return;
+    e.preventDefault();
+    const d=$('#scBox'); if(d) d.open=true;
+    assign(files,state[0].base?1:0);
+  });
+  document.querySelectorAll('input[name=scorder]').forEach(r=>r.addEventListener('change',()=>{order=r.value;refresh();}));
+
+  function assign(files,start){
+    files.filter(f=>f&&f.type.startsWith('image/')).slice(0,2-start).forEach((f,k)=>loadFile(start+k,f));
+  }
+
+  async function loadFile(i,file){
+    const info=$('#scinfo'+i);
+    $('#scpv'+i).hidden=false; $('#scdrop'+i).hidden=true;
+    info.className=''; info.textContent='分析中…';
+    try{
+      const url=URL.createObjectURL(file);
+      const img=new Image();
+      await new Promise((ok,bad)=>{img.onload=ok;img.onerror=bad;img.src=url;});
+      URL.revokeObjectURL(url);
+      const sc=Math.min(3,720/img.naturalWidth);
+      const W=Math.round(img.naturalWidth*sc), H=Math.round(img.naturalHeight*sc);
+      const base=document.createElement('canvas'); base.width=W; base.height=H;
+      const cx=base.getContext('2d',{willReadFrequently:true});
+      cx.drawImage(img,0,0,W,H);
+      const det=analyzeTickets(cx.getImageData(0,0,W,H).data,W,H);
+      state[i]={base,det,sel:det.tickets.map(t=>t.dark)};
+      if(!det.tickets.length){
+        info.className='sc-err'; info.textContent='找不到籤券，請確認截圖包含籤券畫面';
+      }
+    }catch(err){
+      state[i]={};
+      info.className='sc-err'; info.textContent='無法讀取這張圖片';
+    }
+    refresh();
+  }
+
+  /* ---------- order and comparison ---------- */
+  function effective(){
+    const a=state[0],b=state[1];
+    let swap=false;
+    if(order==='swapped') swap=true;
+    else if(order==='auto'&&a.sel&&b.sel) swap=count(a.sel)>count(b.sel);
+    return swap?{before:1,after:0,swap}:{before:0,after:1,swap};
+  }
+
+  function roundRect(c,x,y,w,h,r){
+    c.beginPath();
+    c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();
+  }
+  function drawOverlay(i){
+    const s=state[i]; if(!s.base||!s.det) return;
+    const cv=$('#sccv'+i); cv.width=s.base.width; cv.height=s.base.height;
+    const c=cv.getContext('2d'); c.drawImage(s.base,0,0);
+    const fs=Math.max(12,Math.round((s.det.hm||40)*0.34));
+    c.font=`600 ${fs}px ${MONO}`;
+    c.textAlign='center'; c.textBaseline='middle';
+    s.det.tickets.forEach((t,k)=>{
+      const label=String(k+1), cx=(t.x0+t.x1)/2, cy=(t.y0+t.y1)/2;
+      const w=c.measureText(label).width+fs*0.8, h=fs*1.5;
+      c.fillStyle=s.sel[k]?'#d8284c':'rgba(20,20,26,.74)';
+      roundRect(c,cx-w/2,cy-h/2,w,h,h/2); c.fill();
+      c.fillStyle='#fff'; c.fillText(label,cx,cy+1);
+    });
+    const tot=s.det.tickets.length;
+    if(tot){ const info=$('#scinfo'+i); info.className=''; info.textContent=`${tot} 張籤券 · 已選 ${count(s.sel)} 張`; }
+  }
+
+  let outBA='',outNew='';
+  async function copyOut(text){
+    if(!text) return;
+    let ok=false;
+    try{ await navigator.clipboard.writeText(text); ok=true; }catch(e){}
+    if(!ok){
+      try{
+        const ta=document.createElement('textarea');
+        ta.value=text; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;top:0;left:0;opacity:0';
+        document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,text.length);
+        ok=document.execCommand('copy'); ta.remove();
+      }catch(e){}
+    }
+    const t=document.getElementById('toast');
+    if(t){ t.textContent=ok?'已複製':'複製失敗，請手動複製'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+  }
+  $('#scCopyBA').addEventListener('click',()=>copyOut(outBA));
+  $('#scCopyNew').addEventListener('click',()=>copyOut(outNew));
+
+  function pushElec(v){ if(typeof window.ichibanSetElec==='function') window.ichibanSetElec(v); }
+
+  function refresh(){
+    const eff=effective();
+    [0,1].forEach(i=>{
+      const role=$('#scrole'+i), isBefore=(i===eff.before);
+      role.textContent=isBefore?'電選前':'電選後';
+      role.dataset.r=isBefore?'before':'after';
+      drawOverlay(i);
+    });
+    const B=state[eff.before], A=state[eff.after];
+    const loaded=[0,1].filter(i=>state[i].sel).length;
+    const res=$('#scResult'), notes=$('#scNotes'), mapSec=$('#scMapSec');
+    notes.innerHTML='';
+    if(!(B.sel&&A.sel)){
+      res.textContent=loaded===1?'再上傳另一張截圖就能比對。':'上傳電選前、電選後兩張截圖，就會算出電選號碼並填進上方欄位。';
+      mapSec.hidden=true; $('#scCopy').hidden=true; outBA=outNew=''; return;
+    }
+    const N=Math.max(B.sel.length,A.sel.length);
+    const bs=[],as=[],nw=[],lost=[];
+    for(let i=0;i<N;i++){
+      const b=!!B.sel[i], a=!!A.sel[i];
+      if(b)bs.push(i+1); if(a)as.push(i+1); if(a&&!b)nw.push(i+1); if(b&&!a)lost.push(i+1);
+    }
+    res.textContent=`電選新增 ${nw.length} 個：${fmt(nw)}（已填入上方電選號碼）`;
+    outBA=`電選前已選：${fmt(bs)}\n\n電選後已選：${fmt(as)}`;
+    outNew=`電選號碼：${fmt(nw)}`;
+    $('#scCopy').hidden=false;
+    pushElec(nw.join('、'));
+
+    const add=(kind,text)=>{const p=document.createElement('p');p.className='note '+kind;p.textContent=text;notes.appendChild(p);};
+    if(order==='auto'&&eff.swap) add('info',`圖片 2 的已選數（${count(state[1].sel)}）比圖片 1（${count(state[0].sel)}）少，已視為圖片 2 是電選前。`);
+    const nb=B.det.tickets.length, na=A.det.tickets.length;
+    if(nb!==na) add('warn',`兩張偵測到的籤數不同（電選前 ${nb} 張、電選後 ${na} 張），號碼可能對不上，請對照下方號碼圖。`);
+    if(lost.length) add('warn',`${lost.length} 個號碼只有電選前被選中（${fmt(lost)}），請確認圖片或點下方號碼修正。`);
+    else if(as.length<bs.length) add('warn','電選後的已選數比電選前少，請確認前後順序。');
+
+    mapSec.hidden=false;
+    const map=$('#scMap');
+    map.style.setProperty('--cols',String(Math.max(1,A.det.cols||B.det.cols||6)));
+    map.innerHTML='';
+    for(let i=0;i<N;i++){
+      const b=!!B.sel[i], a=!!A.sel[i];
+      const cls=b&&a?'both':a?'new':b?'lost':'';
+      const name=b&&a?'電選前已選':a?'電選新增':b?'只有電選前選中':'未選';
+      const cell=document.createElement('button');
+      cell.type='button'; cell.className='sc-cell '+cls; cell.textContent=String(i+1);
+      cell.setAttribute('aria-label',`號碼 ${i+1}：${name}`);
+      cell.addEventListener('click',()=>cycle(i));
+      map.appendChild(cell);
+    }
+  }
+
+  function cycle(i){
+    const eff=effective(), B=state[eff.before], A=state[eff.after];
+    while(B.sel.length<=i)B.sel.push(false);
+    while(A.sel.length<=i)A.sel.push(false);
+    const b=B.sel[i], a=A.sel[i];
+    if(!b&&!a){B.sel[i]=true;A.sel[i]=true;}
+    else if(b&&a){B.sel[i]=false;A.sel[i]=true;}
+    else{B.sel[i]=false;A.sel[i]=false;}
+    order=eff.swap?'swapped':'normal';
+    document.querySelector(`input[name=scorder][value=${order}]`).checked=true;
+    refresh();
+  }
+})();
+</script>
+
+</body></html>
