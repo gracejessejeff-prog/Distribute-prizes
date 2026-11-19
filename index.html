@@ -298,7 +298,7 @@ function parsePlayers(text){
 }
 const DIGIT_WORDS={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9};
 function fixLine(t){
-  return String(t).replace(/[(（]\s*(zero|one|two|three|four|five|six|seven|eight|nine|[A-Za-z0-9])\s*[)）]/gi,(m,w)=>w.length===1?w:String(DIGIT_WORDS[w.toLowerCase()]));
+  return String(t).replace(/[(（]\s*(zero|one|two|three|four|five|six|seven|eight|nine|[A-Za-z0-9])\s*[)）]/gi,(m,w)=>w.length===1?w.toUpperCase():String(DIGIT_WORDS[w.toLowerCase()]));
 }
 function fmtPlayer(l){
   const p=l.p;
